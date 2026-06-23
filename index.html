@@ -589,7 +589,10 @@
 
                 const init = {
                     method: method.toUpperCase(),
-                    headers: { Accept: "application/json", ...headers },
+                    headers: { 
+                        Accept: "application/json",
+                        "ngrok-skip-browser-warning": "1",
+                        ...headers },
                     signal,
                 };
                 if (body !== undefined && body !== null) {
