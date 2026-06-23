@@ -2887,8 +2887,8 @@
 
                             /** @typedef {import("../../declarations/WebpackOptions").FilterItemTypes} FilterItemTypes */
                             /** @typedef {import("../../declarations/WebpackOptions").FilterTypes} FilterTypes */
-                            /** @typedef {import("./Logger").LogTypeEnum} LogTypeEnum */
-                            /** @typedef {import("./Logger").Args} Args */
+                            /** @typedef {import("./Logger.js").LogTypeEnum} LogTypeEnum */
+                            /** @typedef {import("./Logger.js").Args} Args */
 
                             /** @typedef {(item: string) => boolean} FilterFunction */
                             /** @typedef {(value: string, type: LogTypeEnum, args?: Args) => void} LoggingFunction */
@@ -4308,7 +4308,7 @@
 
 
             /** @typedef {import("./index.js").EXPECTED_ANY} EXPECTED_ANY */
-            /** @typedef {import("./clients/SockJSClient")} SockJSClient */
+            /** @typedef {import("./clients/SockJSClient.js")} SockJSClient */
 
             // this WebsocketClient is here as a default fallback, in case the client is not injected
             /** @type {CommunicationClientConstructor} */
