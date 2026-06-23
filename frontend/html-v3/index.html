@@ -1,0 +1,1469 @@
+<!Doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#0b3b4d" />
+    <title>Visitas Realizadas — Controle de Visitas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script defer src="/static/js/bundle.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        if (window.self !== window.top) {
+            var s = document.createElement("script"); s.src = "/visual-edit-overlay.js"; document.head.appendChild(s);
+            window.tailwind = window.tailwind || {}; tailwind.config = { corePlugins: { preflight: false } }; var t = document.createElement("script"); t.src = "https://cdn.tailwindcss.com"; document.head.appendChild(t);
+        }
+    </script>
+</head>
+
+<body>
+    <!-- React intentionally not mounted; this is a pure static page -->
+    <div id="root" style="display:none"></div>
+
+    <div class="app" id="app">
+        <!-- =========================================================
+           SIDEBAR
+      ========================================================= -->
+        <aside class="sidebar" id="sidebar" data-testid="sidebar">
+            <div class="brand">
+                <div class="brand-mark">VR</div>
+                <div>
+                    <div class="brand-name">Visitas Realizadas</div>
+                    <div class="brand-sub">Nutrição · CRM</div>
+                </div>
+            </div>
+
+            <nav class="nav" data-testid="nav">
+                <div class="nav-label">Geral</div>
+                <button class="nav-item active" data-section="dashboard" data-testid="nav-dashboard">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </button>
+                <button class="nav-item" data-section="visitas" data-testid="nav-visitas">
+                    <i class="fa-solid fa-stethoscope"></i> Visitas
+                </button>
+                <div class="nav-label" style="margin-top:14px">Cadastros</div>
+                <button class="nav-item" data-section="medicos" data-testid="nav-medicos">
+                    <i class="fa-solid fa-user-doctor"></i> Médicos
+                </button>
+                <button class="nav-item" data-section="produtos" data-testid="nav-produtos">
+                    <i class="fa-solid fa-box-open"></i> Produtos
+                </button>
+            </nav>
+
+            <div class="sidebar-foot">
+                <span style="font-family:var(--mono); color:#cdd9de">v1</span>
+            </div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- =========================================================
+           MAIN
+      ========================================================= -->
+        <main class="main">
+            <header class="topbar">
+                <div class="topbar-left" style="display:flex; align-items:center; gap:14px">
+                    <button class="btn btn-ghost btn-icon menu-toggle" id="menuToggle" data-testid="menu-toggle"
+                        aria-label="Menu">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div>
+                        <h1 id="pageTitle">Dashboard</h1>
+                        <p id="pageSubtitle">Visão geral das visitas e metas do mês</p>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <button class="btn btn-outline" id="btnExportExcel" data-testid="btn-export-excel">
+                        <i class="fa-solid fa-file-excel"></i> Emitir Excel
+                    </button>
+                    <button class="btn btn-primary" id="btnNewVisitTop" data-testid="btn-new-visit-top">
+                        <i class="fa-solid fa-plus"></i> Nova visita
+                    </button>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- ============================ DASHBOARD ============================ -->
+                <section class="section active" id="section-dashboard" data-testid="section-dashboard">
+                    <div class="section-head">
+                        <div>
+                            <h2>Visão geral</h2>
+                            <p>Resumo agregado das visitas e produção do mês corrente.</p>
+                        </div>
+                        <div class="section-actions">
+                            <button class="btn btn-outline btn-sm" id="btnReloadDashboard"
+                                data-testid="btn-reload-dashboard">
+                                <i class="fa-solid fa-rotate"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-4" id="kpiGrid" data-testid="kpi-grid">
+                        <div class="kpi" data-testid="kpi-mes">
+                            <div class="kpi-label">Visitas no mês</div>
+                            <div class="kpi-value" id="kpiMes">0</div>
+                            <div class="kpi-meta"><i class="fa-solid fa-calendar-day"></i> Mês corrente</div>
+                            <i class="fa-solid fa-stethoscope kpi-icon"></i>
+                        </div>
+                        <div class="kpi kpi-success" data-testid="kpi-ativas">
+                            <div class="kpi-label">Visitas ativas</div>
+                            <div class="kpi-value" id="kpiAtivas">0</div>
+                            <div class="kpi-meta"><i class="fa-solid fa-circle-check"></i> Status ATIVO</div>
+                            <i class="fa-solid fa-user-check kpi-icon"></i>
+                        </div>
+                        <div class="kpi kpi-warn" data-testid="kpi-potencial">
+                            <div class="kpi-label">Visitas potencial</div>
+                            <div class="kpi-value" id="kpiPotencial">0</div>
+                            <div class="kpi-meta"><i class="fa-solid fa-bullseye"></i> Status POTENCIAL</div>
+                            <i class="fa-solid fa-chart-pie kpi-icon"></i>
+                        </div>
+                        <div class="kpi kpi-accent" data-testid="kpi-vendido">
+                            <div class="kpi-label">Total vendido no mês</div>
+                            <div class="kpi-value" id="kpiVendido">R$ 0,00</div>
+                            <div class="kpi-meta"><i class="fa-solid fa-coins"></i> Soma das quantidades × preço</div>
+                            <i class="fa-solid fa-sack-dollar kpi-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-kicker">Distribuição</div>
+                                    <h3 class="card-title">Visitas por especialidade</h3>
+                                    <p class="card-sub">Contagem total por especialidade médica.</p>
+                                </div>
+                            </div>
+                            <div id="chartEspecialidade" data-testid="chart-especialidade"></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-kicker">Últimos lançamentos</div>
+                                    <h3 class="card-title">Visitas recentes</h3>
+                                    <p class="card-sub">5 mais recentes registros cadastrados.</p>
+                                </div>
+                            </div>
+                            <div id="recentVisits" data-testid="recent-visits"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================ VISITAS ============================ -->
+                <section class="section" id="section-visitas" data-testid="section-visitas">
+                    <div class="section-head">
+                        <div>
+                            <h2>Visitas realizadas</h2>
+                            <p>Registre uma nova visita e acompanhe o histórico cadastrado.</p>
+                        </div>
+                        <div class="section-actions">
+                            <button class="btn btn-outline" id="btnExportExcel2" data-testid="btn-export-excel-2">
+                                <i class="fa-solid fa-file-excel"></i> Excel
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid" style="grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px;"
+                        id="visitGrid">
+                        <!-- Form -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-kicker">Novo registro</div>
+                                    <h3 class="card-title">Cadastrar visita realizada</h3>
+                                    <p class="card-sub">Preencha os campos do contrato <span
+                                            style="font-family:var(--mono)">VisitaRealizadaDto</span>.</p>
+                                </div>
+                            </div>
+                            <form id="formVisita" class="grid grid-form" novalidate data-testid="form-visita">
+                                <div class="field col-6">
+                                    <label>Médico <span class="req">*</span></label>
+                                    <div class="combo" id="comboMedico" data-testid="combo-medico">
+                                        <div class="combo-control" tabindex="0">
+                                            <span class="combo-value placeholder">Selecione um médico…</span>
+                                            <i class="fa-solid fa-chevron-down combo-caret"></i>
+                                        </div>
+                                        <div class="combo-panel">
+                                            <div class="combo-search">
+                                                <i class="fa-solid fa-magnifying-glass"></i>
+                                                <input type="text" placeholder="Pesquisar médico…"
+                                                    data-testid="combo-medico-search" />
+                                            </div>
+                                            <div class="combo-list" data-testid="combo-medico-list"></div>
+                                            <div class="combo-footer">
+                                                <button type="button" class="combo-add" data-testid="combo-medico-add">
+                                                    <i class="fa-solid fa-plus"></i> Cadastrar novo médico
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="field-error" data-error="medico" hidden>Selecione um médico.</div>
+                                </div>
+
+                                <div class="field col-6">
+                                    <label>Produto <span class="req">*</span></label>
+                                    <div class="combo" id="comboProduto" data-testid="combo-produto">
+                                        <div class="combo-control" tabindex="0">
+                                            <span class="combo-value placeholder">Selecione um produto…</span>
+                                            <i class="fa-solid fa-chevron-down combo-caret"></i>
+                                        </div>
+                                        <div class="combo-panel">
+                                            <div class="combo-search">
+                                                <i class="fa-solid fa-magnifying-glass"></i>
+                                                <input type="text" placeholder="Pesquisar produto…"
+                                                    data-testid="combo-produto-search" />
+                                            </div>
+                                            <div class="combo-list" data-testid="combo-produto-list"></div>
+                                            <div class="combo-footer">
+                                                <button type="button" class="combo-add" data-testid="combo-produto-add">
+                                                    <i class="fa-solid fa-plus"></i> Cadastrar novo produto
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="field-error" data-error="produto" hidden>Selecione um produto.</div>
+                                </div>
+
+                                <div class="field col-4">
+                                    <label>Data da visita <span class="req">*</span></label>
+                                    <input type="date" name="dataVisita" class="input" required
+                                        data-testid="input-dataVisita" />
+                                    <div class="field-error" data-error="dataVisita" hidden>Data obrigatória.</div>
+                                </div>
+                                <div class="field col-4">
+                                    <label>Hora da visita</label>
+                                    <input type="time" name="horaVisita" class="input" data-testid="input-horaVisita" />
+                                </div>
+                                <div class="field col-4">
+                                    <label>Quantidade <span class="req">*</span></label>
+                                    <input type="number" name="quantidade" class="input" step="0.01" min="0"
+                                        placeholder="0" required data-testid="input-quantidade" />
+                                    <div class="field-error" data-error="quantidade" hidden>Quantidade obrigatória.
+                                    </div>
+                                </div>
+
+                                <div class="field col-6">
+                                    <label>Especialidade</label>
+                                    <select name="especialidade" class="select" data-testid="select-especialidade">
+                                        <option value="">Selecione…</option>
+                                    </select>
+                                </div>
+                                <div class="field col-6">
+                                    <label>Status</label>
+                                    <select name="status" class="select" data-testid="select-status">
+                                        <option value="">Selecione…</option>
+                                        <option value="ATIVO">Ativo</option>
+                                        <option value="POTENCIAL">Potencial</option>
+                                    </select>
+                                </div>
+
+                                <div class="field col-6">
+                                    <label>Responsável</label>
+                                    <input type="text" name="responsavel" class="input"
+                                        placeholder="Quem realizou a visita" data-testid="input-responsavel" />
+                                </div>
+                                <div class="field col-6">
+                                    <label>Hospital / Clínica</label>
+                                    <input type="text" name="hospitalClinica" class="input"
+                                        placeholder="Local da visita" data-testid="input-hospitalClinica" />
+                                </div>
+
+                                <div class="field col-12">
+                                    <label>Objetivo da visita</label>
+                                    <input type="text" name="objetivoVisita" class="input"
+                                        placeholder="Ex: Apresentar novo produto X"
+                                        data-testid="input-objetivoVisita" />
+                                </div>
+
+                                <div class="field col-6">
+                                    <label>Feedback</label>
+                                    <textarea name="feedback" class="textarea"
+                                        placeholder="Percepções e impressões do contato"
+                                        data-testid="input-feedback"></textarea>
+                                </div>
+                                <div class="field col-6">
+                                    <label>Próximos passos</label>
+                                    <textarea name="proximosPassos" class="textarea" placeholder="Compromissos e ações"
+                                        data-testid="input-proximosPassos"></textarea>
+                                </div>
+
+                                <div class="field col-12">
+                                    <label>Observações</label>
+                                    <textarea name="observacoes" class="textarea" placeholder="Notas adicionais"
+                                        data-testid="input-observacoes"></textarea>
+                                </div>
+
+                                <div class="col-12"
+                                    style="display:flex; gap:10px; justify-content:flex-end; padding-top: 4px;">
+                                    <button type="reset" class="btn btn-ghost" data-testid="btn-reset-visita">
+                                        <i class="fa-solid fa-eraser"></i> Limpar
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" data-testid="btn-submit-visita">
+                                        <i class="fa-solid fa-check"></i> Cadastrar visita
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- List -->
+                        <div class="card" style="padding: 0; display:flex; flex-direction:column;">
+                            <div style="padding: 22px 22px 0;">
+                                <div class="card-header" style="margin-bottom: 6px;">
+                                    <div>
+                                        <div class="card-kicker">Histórico</div>
+                                        <h3 class="card-title">Visitas cadastradas</h3>
+                                        <p class="card-sub">Lista completa dos registros de visitas.</p>
+                                    </div>
+                                    <span class="badge badge-primary" id="visitCount" data-testid="visit-count">0
+                                        visitas</span>
+                                </div>
+                                <div style="display:flex; gap:10px; margin: 12px 0 16px;">
+                                    <div style="flex:1; position:relative;">
+                                        <i class="fa-solid fa-magnifying-glass"
+                                            style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:12px;"></i>
+                                        <input id="visitFilter" class="input"
+                                            placeholder="Filtrar por médico, produto, responsável…"
+                                            style="padding-left:34px" data-testid="visit-filter" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="visitListWrap" style="flex:1; padding: 0 16px 16px;" data-testid="visit-list-wrap">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================ MÉDICOS ============================ -->
+                <section class="section" id="section-medicos" data-testid="section-medicos">
+                    <div class="section-head">
+                        <div>
+                            <h2>Médicos</h2>
+                            <p>Cadastro de médicos disponíveis para vincular às visitas.</p>
+                        </div>
+                        <div class="section-actions">
+                            <button class="btn btn-primary" id="btnNewMedico" data-testid="btn-new-medico">
+                                <i class="fa-solid fa-plus"></i> Novo médico
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card" style="padding: 0;">
+                        <div style="padding: 22px 22px 16px; display:flex; gap:10px; align-items:center;">
+                            <div style="flex:1; position:relative;">
+                                <i class="fa-solid fa-magnifying-glass"
+                                    style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:12px;"></i>
+                                <input id="medicoFilter" class="input" placeholder="Pesquisar por nome, especialidade…"
+                                    style="padding-left:34px" data-testid="medico-filter" />
+                            </div>
+                            <span class="badge badge-primary" id="medicoCount" data-testid="medico-count">0
+                                médicos</span>
+                        </div>
+                        <div id="medicoListWrap" data-testid="medico-list-wrap"></div>
+                    </div>
+                </section>
+
+                <!-- ============================ PRODUTOS ============================ -->
+                <section class="section" id="section-produtos" data-testid="section-produtos">
+                    <div class="section-head">
+                        <div>
+                            <h2>Produtos</h2>
+                            <p>Catálogo de produtos apresentados nas visitas.</p>
+                        </div>
+                        <div class="section-actions">
+                            <button class="btn btn-primary" id="btnNewProduto" data-testid="btn-new-produto">
+                                <i class="fa-solid fa-plus"></i> Novo produto
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card" style="padding: 0;">
+                        <div style="padding: 22px 22px 16px; display:flex; gap:10px; align-items:center;">
+                            <div style="flex:1; position:relative;">
+                                <i class="fa-solid fa-magnifying-glass"
+                                    style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:12px;"></i>
+                                <input id="produtoFilter" class="input"
+                                    placeholder="Pesquisar por nome, código, fornecedor…" style="padding-left:34px"
+                                    data-testid="produto-filter" />
+                            </div>
+                            <span class="badge badge-primary" id="produtoCount" data-testid="produto-count">0
+                                produtos</span>
+                        </div>
+                        <div id="produtoListWrap" data-testid="produto-list-wrap"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- =========================================================
+         MODALS
+    ========================================================= -->
+    <!-- Médico -->
+    <div class="modal-backdrop" id="modalMedico" data-testid="modal-medico">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalMedicoTitle">
+            <div class="modal-head">
+                <div>
+                    <h3 id="modalMedicoTitle">Cadastrar médico</h3>
+                    <p id="modalMedicoSub">Preencha os dados do contrato <span
+                            style="font-family:var(--mono)">Medico</span>.</p>
+                </div>
+                <button class="btn btn-ghost btn-icon" data-close-modal data-testid="modal-medico-close"
+                    aria-label="Fechar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formMedico" class="grid grid-form" novalidate data-testid="form-medico">
+                    <div class="field col-12">
+                        <label>Nome <span class="req">*</span></label>
+                        <input type="text" name="nome" class="input" placeholder="Nome completo" required
+                            data-testid="medico-input-nome" />
+                        <div class="field-error" data-error="nome" hidden>Nome obrigatório.</div>
+                    </div>
+                    <div class="field col-6">
+                        <label>Especialidade</label>
+                        <select name="especialidade" class="select" data-testid="medico-select-especialidade">
+                            <option value="">Selecione…</option>
+                        </select>
+                    </div>
+                    <div class="field col-6">
+                        <label>Telefone</label>
+                        <input type="text" name="telefone" class="input" placeholder="(00) 00000-0000"
+                            data-testid="medico-input-telefone" />
+                    </div>
+                    <div class="field col-12">
+                        <label>Endereço</label>
+                        <input type="text" name="endereco" class="input" placeholder="Rua, número, cidade"
+                            data-testid="medico-input-endereco" />
+                    </div>
+                    <div class="field col-12">
+                        <label>Observação</label>
+                        <textarea name="observacao" class="textarea" placeholder="Notas internas"
+                            data-testid="medico-input-observacao"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-ghost" data-close-modal data-testid="modal-medico-cancel">Cancelar</button>
+                <button class="btn btn-primary" id="btnSaveMedico" data-testid="modal-medico-save">
+                    <i class="fa-solid fa-check"></i> Salvar médico
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Produto -->
+    <div class="modal-backdrop" id="modalProduto" data-testid="modal-produto">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalProdutoTitle">
+            <div class="modal-head">
+                <div>
+                    <h3 id="modalProdutoTitle">Cadastrar produto</h3>
+                    <p id="modalProdutoSub">Preencha os dados do contrato <span
+                            style="font-family:var(--mono)">Produto</span>.</p>
+                </div>
+                <button class="btn btn-ghost btn-icon" data-close-modal data-testid="modal-produto-close"
+                    aria-label="Fechar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formProduto" class="grid grid-form" novalidate data-testid="form-produto">
+                    <div class="field col-12">
+                        <label>Nome <span class="req">*</span></label>
+                        <input type="text" name="nome" class="input" placeholder="Nome do produto" required
+                            data-testid="produto-input-nome" />
+                        <div class="field-error" data-error="nome" hidden>Nome obrigatório.</div>
+                    </div>
+                    <div class="field col-6">
+                        <label>Código</label>
+                        <input type="text" name="codigo" class="input" placeholder="SKU"
+                            data-testid="produto-input-codigo" />
+                    </div>
+                    <div class="field col-6">
+                        <label>Preço</label>
+                        <input type="number" name="preco" step="0.01" min="0" class="input" placeholder="0,00"
+                            data-testid="produto-input-preco" />
+                    </div>
+                    <div class="field col-12">
+                        <label>Fornecedor</label>
+                        <input type="text" name="fornecedor" class="input" placeholder="Nome do fornecedor"
+                            data-testid="produto-input-fornecedor" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-ghost" data-close-modal data-testid="modal-produto-cancel">Cancelar</button>
+                <button class="btn btn-primary" id="btnSaveProduto" data-testid="modal-produto-save">
+                    <i class="fa-solid fa-check"></i> Salvar produto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm -->
+    <div class="modal-backdrop" id="modalConfirm" data-testid="modal-confirm">
+        <div class="modal" role="dialog" aria-modal="true" style="max-width: 420px;">
+            <div class="modal-head">
+                <div>
+                    <h3 id="modalConfirmTitle">Confirmar ação</h3>
+                    <p id="modalConfirmSub">Esta ação não pode ser desfeita.</p>
+                </div>
+                <button class="btn btn-ghost btn-icon" data-close-modal data-testid="modal-confirm-close"
+                    aria-label="Fechar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalConfirmBody">
+                Deseja realmente continuar?
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-ghost" data-close-modal data-testid="modal-confirm-cancel">Cancelar</button>
+                <button class="btn btn-danger" id="btnConfirmOk" data-testid="modal-confirm-ok">
+                    <i class="fa-solid fa-trash"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toaster -->
+    <div class="toaster" id="toaster" data-testid="toaster"></div>
+
+    <!-- =========================================================
+         SCRIPTS — modular (IIFE) pattern
+    ========================================================= -->
+    <script>
+        // -----------------------------------------------------------------
+        // Module: Enums (from OpenAPI contract)
+        // -----------------------------------------------------------------
+        const Enums = (() => {
+            const especialidades = [
+                { value: "REGENERATIVA", label: "Regenerativa" },
+                { value: "ORTO", label: "Orto" },
+                { value: "NUTROLOGO", label: "Nutrólogo" },
+                { value: "NUTRICIONISTA", label: "Nutricionista" },
+                { value: "GERAL_EMAGRECIMENTO", label: "Geral - Emagrecimento" },
+                { value: "GASTRO", label: "Gastro" },
+                { value: "FINANCEIRO_REGEN", label: "Financeiro Regen" },
+                { value: "EMAGRECIMENTO", label: "Emagrecimento" },
+                { value: "DOR", label: "Dor" },
+                { value: "BIOMEDICA", label: "Biomédica" },
+                { value: "NONE", label: "Não informado" },
+            ];
+            const status = [
+                { value: "ATIVO", label: "Ativo" },
+                { value: "POTENCIAL", label: "Potencial" },
+            ];
+            const labelFor = (list, v) => (list.find((e) => e.value === v) || {}).label || v || "—";
+            return { especialidades, status, labelFor };
+        })();
+
+        // Module: Http — chamada real via fetch para o backend Spring.
+        // -----------------------------------------------------------------
+        const Http = (() => {
+            // Aponte para a URL do backend (ex.: http://localhost:9090/api).
+            // Em produção, leia de uma <meta> ou window.__API__ injetado no HTML.
+            const BASE_URL = window.__API__ || "http://localhost:9090/api";
+
+            function buildQuery(query) {
+                if (!query) return "";
+                const usp = new URLSearchParams();
+                Object.entries(query).forEach(([k, v]) => {
+                    if (v === undefined || v === null || v === "") return;
+                    if (Array.isArray(v)) v.forEach((x) => usp.append(k, x));
+                    else usp.append(k, v);
+                });
+                const s = usp.toString();
+                return s ? `?${s}` : "";
+            }
+
+            async function request(method, path, opts = {}) {
+                const { body, query, headers = {}, signal } = opts;
+                const url = `${BASE_URL}${path}${buildQuery(query)}`;
+
+                const init = {
+                    method: method.toUpperCase(),
+                    headers: { Accept: "application/json", ...headers },
+                    signal,
+                };
+                if (body !== undefined && body !== null) {
+                    init.headers["Content-Type"] = "application/json";
+                    init.body = JSON.stringify(body);
+                }
+
+                let res;
+                try {
+                    res = await fetch(url, init);
+                } catch (err) {
+                    // Falha de rede / CORS
+                    return { ok: false, status: 0, data: { message: err.message } };
+                }
+
+                // Endpoint /visita-realizada/excel devolve bytes (.xlsx)
+                if (path.endsWith("/visita-realizada/excel")) {
+                    const blob = await res.blob();
+                    const bytes = new Uint8Array(await blob.arrayBuffer());
+                    return { ok: res.ok, status: res.status, data: bytes, blob };
+                }
+
+                if (res.status === 204) return { ok: true, status: 204, data: null };
+
+                const ct = res.headers.get("content-type") || "";
+                const data = ct.includes("application/json")
+                    ? await res.json().catch(() => null)
+                    : await res.text();
+                return { ok: res.ok, status: res.status, data };
+            }
+
+            return { request };
+        })();
+        // -----------------------------------------------------------------
+        // Module: API — typed wrappers over Http (one per OpenAPI tag)
+        // -----------------------------------------------------------------
+        const Api = (() => {
+            const unwrap = async (p) => {
+                const r = await p;
+                if (!r.ok) throw new Error(r.data?.message || "Erro na requisição");
+                return r.data;
+            };
+            return {
+                medicos: {
+                    list: (filtro) => unwrap(Http.request("GET", "/medico", { query: { filtro } })),
+                    create: (body) => unwrap(Http.request("POST", "/medico", { body })),
+                    remove: (id) => unwrap(Http.request("DELETE", `/medico/${id}`)),
+                },
+                produtos: {
+                    list: (filtro) => unwrap(Http.request("GET", "/produto", { query: { filtro } })),
+                    create: (body) => unwrap(Http.request("POST", "/produto", { body })),
+                    remove: (id) => unwrap(Http.request("DELETE", `/produto/${id}`)),
+                },
+                visitas: {
+                    list: (filtro) => unwrap(Http.request("GET", "/visita-realizada", { query: { filtro } })),
+                    create: (body) => unwrap(Http.request("POST", "/visita-realizada", { body })),
+                    remove: (id) => unwrap(Http.request("DELETE", `/visita-realizada/${id}`)),
+                    excel: () => unwrap(Http.request("GET", "/visita-realizada/excel")),
+                },
+                dashboard: {
+                    get: () => unwrap(Http.request("GET", "/dashboard")),
+                },
+            };
+        })();
+
+        // -----------------------------------------------------------------
+        // Module: UI primitives — toast, modal, format
+        // -----------------------------------------------------------------
+        const UI = (() => {
+            const toaster = document.getElementById("toaster");
+            function toast({ title, message = "", type = "info", duration = 3200 }) {
+                const el = document.createElement("div");
+                el.className = `toast ${type}`;
+                const icon =
+                    type === "success" ? "fa-circle-check" :
+                        type === "error" ? "fa-circle-exclamation" :
+                            "fa-circle-info";
+                el.innerHTML = `
+            <i class="fa-solid ${icon} toast-ico"></i>
+            <div class="toast-body">
+              <div class="toast-title">${escapeHtml(title)}</div>
+              ${message ? `<div class="toast-msg">${escapeHtml(message)}</div>` : ""}
+            </div>`;
+                el.setAttribute("data-testid", `toast-${type}`);
+                toaster.appendChild(el);
+                setTimeout(() => {
+                    el.style.transition = "opacity .25s ease, transform .25s ease";
+                    el.style.opacity = "0";
+                    el.style.transform = "translateX(20px)";
+                    setTimeout(() => el.remove(), 260);
+                }, duration);
+            }
+
+            function openModal(id) {
+                document.getElementById(id).classList.add("open");
+                document.body.style.overflow = "hidden";
+            }
+            function closeModal(id) {
+                document.getElementById(id).classList.remove("open");
+                document.body.style.overflow = "";
+            }
+            function bindModalClosers() {
+                document.querySelectorAll(".modal-backdrop").forEach((m) => {
+                    m.addEventListener("click", (e) => {
+                        if (e.target === m) closeModal(m.id);
+                    });
+                });
+                document.querySelectorAll("[data-close-modal]").forEach((b) => {
+                    b.addEventListener("click", () => {
+                        const m = b.closest(".modal-backdrop");
+                        if (m) closeModal(m.id);
+                    });
+                });
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape") {
+                        document.querySelectorAll(".modal-backdrop.open").forEach((m) => closeModal(m.id));
+                    }
+                });
+            }
+
+            function escapeHtml(s) {
+                return String(s ?? "")
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll('"', "&quot;")
+                    .replaceAll("'", "&#39;");
+            }
+
+            const fmtBRL = (n) =>
+                (Number(n) || 0).toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                });
+            const fmtDate = (iso) => {
+                if (!iso) return "—";
+                const [y, m, d] = String(iso).split("-");
+                if (!y || !m || !d) return iso;
+                return `${d}/${m}/${y}`;
+            };
+            const fmtNumber = (n) =>
+                (Number(n) || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+
+            return { toast, openModal, closeModal, bindModalClosers, escapeHtml, fmtBRL, fmtDate, fmtNumber };
+        })();
+
+        // -----------------------------------------------------------------
+        // Module: Combo (searchable select with "add new" footer)
+        // -----------------------------------------------------------------
+        const Combo = (() => {
+            function create({ rootId, placeholder, addLabel, onAdd, render, getItems }) {
+                const root = document.getElementById(rootId);
+                const control = root.querySelector(".combo-control");
+                const value = root.querySelector(".combo-value");
+                const panel = root.querySelector(".combo-panel");
+                const search = root.querySelector(".combo-search input");
+                const list = root.querySelector(".combo-list");
+                const addBtn = root.querySelector(".combo-add");
+                if (placeholder) value.textContent = placeholder;
+                if (addLabel) addBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${addLabel}`;
+                let selected = null;
+                let query = "";
+
+                function renderList() {
+                    const items = getItems();
+                    const q = query.trim().toLowerCase();
+                    const filtered = q
+                        ? items.filter((it) => render(it).toLowerCase().includes(q))
+                        : items;
+                    list.innerHTML = "";
+                    if (filtered.length === 0) {
+                        list.innerHTML = `<div class="combo-empty">Nenhum resultado.</div>`;
+                        return;
+                    }
+                    for (const it of filtered) {
+                        const el = document.createElement("div");
+                        el.className = "combo-option";
+                        el.setAttribute("data-testid", `${rootId}-opt-${it.id}`);
+                        const subParts = [];
+                        if (it.especialidade) subParts.push(Enums.labelFor(Enums.especialidades, it.especialidade));
+                        if (it.codigo) subParts.push(`Cód. ${it.codigo}`);
+                        if (it.fornecedor) subParts.push(it.fornecedor);
+                        if (it.preco != null) subParts.push(UI.fmtBRL(it.preco));
+                        if (it.telefone) subParts.push(it.telefone);
+                        el.innerHTML = `
+                <span class="combo-option-title">${UI.escapeHtml(it.nome || "")}</span>
+                ${subParts.length ? `<span class="combo-option-sub">${UI.escapeHtml(subParts.join(" · "))}</span>` : ""}
+              `;
+                        el.addEventListener("click", () => {
+                            selected = it;
+                            value.textContent = it.nome;
+                            value.classList.remove("placeholder");
+                            close();
+                            root.dispatchEvent(new CustomEvent("change", { detail: it }));
+                        });
+                        list.appendChild(el);
+                    }
+                }
+
+                function open() {
+                    root.classList.add("open");
+                    renderList();
+                    setTimeout(() => search.focus(), 30);
+                }
+                function close() {
+                    root.classList.remove("open");
+                    search.value = "";
+                    query = "";
+                }
+                function toggle() {
+                    root.classList.contains("open") ? close() : open();
+                }
+
+                control.addEventListener("click", toggle);
+                control.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggle();
+                    }
+                });
+                search.addEventListener("input", (e) => {
+                    query = e.target.value;
+                    renderList();
+                });
+                addBtn.addEventListener("click", () => {
+                    close();
+                    onAdd && onAdd();
+                });
+                document.addEventListener("click", (e) => {
+                    if (!root.contains(e.target)) close();
+                });
+
+                return {
+                    refresh: renderList,
+                    setSelected(item) {
+                        selected = item;
+                        if (item) {
+                            value.textContent = item.nome;
+                            value.classList.remove("placeholder");
+                        } else {
+                            value.textContent = placeholder;
+                            value.classList.add("placeholder");
+                        }
+                    },
+                    getSelected: () => selected,
+                    clear() {
+                        selected = null;
+                        value.textContent = placeholder;
+                        value.classList.add("placeholder");
+                    },
+                    close,
+                };
+            }
+            return { create };
+        })();
+
+        // -----------------------------------------------------------------
+        // Module: Validator — small form validation helper
+        // -----------------------------------------------------------------
+        const Validator = (() => {
+            function reset(form) {
+                form.querySelectorAll(".field").forEach((f) => f.classList.remove("error"));
+                form.querySelectorAll("[data-error]").forEach((e) => (e.hidden = true));
+            }
+            function showError(form, name, message) {
+                const input = form.querySelector(`[name="${name}"]`);
+                if (input) input.closest(".field")?.classList.add("error");
+                const err = form.querySelector(`[data-error="${name}"]`);
+                if (err) {
+                    if (message) err.textContent = message;
+                    err.hidden = false;
+                }
+            }
+            function showErrorEl(el, message) {
+                el.closest(".field")?.classList.add("error");
+            }
+            return { reset, showError, showErrorEl };
+        })();
+
+        // -----------------------------------------------------------------
+        // Module: App controller — sections, navigation, render logic
+        // -----------------------------------------------------------------
+        const App = (() => {
+            // ----- Navigation -----
+            const titles = {
+                dashboard: { t: "Dashboard", s: "Visão geral das visitas e metas do mês" },
+                visitas: { t: "Visitas", s: "Cadastrar e acompanhar visitas realizadas" },
+                medicos: { t: "Médicos", s: "Cadastro de médicos do convênio" },
+                produtos: { t: "Produtos", s: "Catálogo de produtos apresentados" },
+            };
+
+            function go(section) {
+                document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
+                document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
+                document.getElementById(`section-${section}`).classList.add("active");
+                document.querySelector(`.nav-item[data-section="${section}"]`)?.classList.add("active");
+                document.getElementById("pageTitle").textContent = titles[section].t;
+                document.getElementById("pageSubtitle").textContent = titles[section].s;
+                document.getElementById("sidebar").classList.remove("open");
+                document.getElementById("sidebarOverlay").classList.remove("open");
+                if (section === "dashboard") refreshDashboard();
+                if (section === "visitas") { refreshVisitas(); }
+                if (section === "medicos") refreshMedicos();
+                if (section === "produtos") refreshProdutos();
+            }
+
+            function bindNav() {
+                document.querySelectorAll(".nav-item").forEach((n) => {
+                    n.addEventListener("click", () => go(n.dataset.section));
+                });
+                document.getElementById("menuToggle").addEventListener("click", () => {
+                    document.getElementById("sidebar").classList.toggle("open");
+                    document.getElementById("sidebarOverlay").classList.toggle("open");
+                });
+                document.getElementById("sidebarOverlay").addEventListener("click", () => {
+                    document.getElementById("sidebar").classList.remove("open");
+                    document.getElementById("sidebarOverlay").classList.remove("open");
+                });
+            }
+
+            // ----- Combos -----
+            let comboMedico, comboProduto;
+            function initCombos() {
+                comboMedico = Combo.create({
+                    rootId: "comboMedico",
+                    placeholder: "Selecione um médico…",
+                    addLabel: "Cadastrar novo médico",
+                    onAdd: () => openMedicoModal(),
+                    render: (it) =>
+                        `${it.nome || ""} ${Enums.labelFor(Enums.especialidades, it.especialidade)} ${it.telefone || ""}`,
+                    getItems: () => medicos,
+                });
+                comboProduto = Combo.create({
+                    rootId: "comboProduto",
+                    placeholder: "Selecione um produto…",
+                    addLabel: "Cadastrar novo produto",
+                    onAdd: () => openProdutoModal(),
+                    render: (it) =>
+                        `${it.nome || ""} ${it.codigo || ""} ${it.fornecedor || ""}`,
+                    getItems: () => produtos,
+                });
+            }
+
+            // ----- Specialidade selects -----
+            function populateEspecialidadeSelects() {
+                document
+                    .querySelectorAll('select[name="especialidade"]')
+                    .forEach((sel) => {
+                        const current = sel.value;
+                        sel.innerHTML = '<option value="">Selecione…</option>';
+                        Enums.especialidades.forEach((e) => {
+                            const o = document.createElement("option");
+                            o.value = e.value;
+                            o.textContent = e.label;
+                            sel.appendChild(o);
+                        });
+                        sel.value = current;
+                    });
+            }
+
+            // ----- Data caches -----
+            let medicos = [];
+            let produtos = [];
+            let visitas = [];
+
+            // ----- Médicos -----
+            async function refreshMedicos() {
+                const filtro = document.getElementById("medicoFilter").value;
+                medicos = await Api.medicos.list(filtro);
+                renderMedicos();
+                comboMedico && comboMedico.refresh();
+                document.getElementById("medicoCount").textContent =
+                    `${medicos.length} ${medicos.length === 1 ? "médico" : "médicos"}`;
+            }
+            function renderMedicos() {
+                const wrap = document.getElementById("medicoListWrap");
+                if (medicos.length === 0) {
+                    wrap.innerHTML = emptyState("user-doctor", "Nenhum médico cadastrado", "Adicione um médico para vinculá-lo às visitas.");
+                    return;
+                }
+                wrap.innerHTML = `
+            <div class="table-wrap" style="border:none; border-radius:0;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Especialidade</th>
+                    <th>Telefone</th>
+                    <th>Endereço</th>
+                    <th style="text-align:right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${medicos.map((m) => `
+                    <tr data-testid="medico-row-${m.id}">
+                      <td><div class="cell-primary">${UI.escapeHtml(m.nome)}</div>${m.observacao ? `<div class="cell-muted">${UI.escapeHtml(m.observacao)}</div>` : ""}</td>
+                      <td><span class="badge badge-primary">${UI.escapeHtml(Enums.labelFor(Enums.especialidades, m.especialidade))}</span></td>
+                      <td>${UI.escapeHtml(m.telefone || "—")}</td>
+                      <td>${UI.escapeHtml(m.endereco || "—")}</td>
+                      <td>
+                        <div class="row-actions">
+                          <button class="btn-icon danger" data-action="delete-medico" data-id="${m.id}" data-testid="btn-delete-medico-${m.id}" title="Excluir">
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>`;
+                wrap.querySelectorAll('[data-action="delete-medico"]').forEach((b) => {
+                    b.addEventListener("click", () => askDelete({
+                        title: "Excluir médico",
+                        message: "Deseja realmente excluir este médico? Esta ação não pode ser desfeita.",
+                        onOk: async () => {
+                            await Api.medicos.remove(Number(b.dataset.id));
+                            UI.toast({ title: "Médico excluído", type: "success" });
+                            await refreshMedicos();
+                        },
+                    }));
+                });
+            }
+
+            function openMedicoModal() {
+                document.getElementById("formMedico").reset();
+                Validator.reset(document.getElementById("formMedico"));
+                UI.openModal("modalMedico");
+                setTimeout(() => document.querySelector('#formMedico [name="nome"]').focus(), 50);
+            }
+
+            async function submitMedico() {
+                const form = document.getElementById("formMedico");
+                Validator.reset(form);
+                const data = formToObject(form);
+                if (!data.nome?.trim()) {
+                    Validator.showError(form, "nome");
+                    return UI.toast({ title: "Campos inválidos", message: "Verifique os campos obrigatórios.", type: "error" });
+                }
+                try {
+                    const novo = await Api.medicos.create({
+                        nome: data.nome.trim(),
+                        especialidade: data.especialidade || null,
+                        telefone: data.telefone || "",
+                        endereco: data.endereco || "",
+                        observacao: data.observacao || "",
+                    });
+                    UI.closeModal("modalMedico");
+                    UI.toast({ title: "Médico cadastrado", message: novo.nome, type: "success" });
+                    await refreshMedicos();
+                    comboMedico.setSelected(novo);
+                } catch (e) {
+                    UI.toast({ title: "Erro ao salvar", message: e.message, type: "error" });
+                }
+            }
+
+            // ----- Produtos -----
+            async function refreshProdutos() {
+                const filtro = document.getElementById("produtoFilter").value;
+                produtos = await Api.produtos.list(filtro);
+                renderProdutos();
+                comboProduto && comboProduto.refresh();
+                document.getElementById("produtoCount").textContent =
+                    `${produtos.length} ${produtos.length === 1 ? "produto" : "produtos"}`;
+            }
+            function renderProdutos() {
+                const wrap = document.getElementById("produtoListWrap");
+                if (produtos.length === 0) {
+                    wrap.innerHTML = emptyState("box-open", "Nenhum produto cadastrado", "Adicione produtos ao catálogo para vinculá-los às visitas.");
+                    return;
+                }
+                wrap.innerHTML = `
+            <div class="table-wrap" style="border:none; border-radius:0;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Código</th>
+                    <th>Fornecedor</th>
+                    <th>Preço</th>
+                    <th style="text-align:right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${produtos.map((p) => `
+                    <tr data-testid="produto-row-${p.id}">
+                      <td><div class="cell-primary">${UI.escapeHtml(p.nome)}</div></td>
+                      <td><span class="badge badge-muted" style="font-family:var(--mono)">${UI.escapeHtml(p.codigo || "—")}</span></td>
+                      <td>${UI.escapeHtml(p.fornecedor || "—")}</td>
+                      <td><strong style="font-family:var(--mono)">${UI.fmtBRL(p.preco)}</strong></td>
+                      <td>
+                        <div class="row-actions">
+                          <button class="btn-icon danger" data-action="delete-produto" data-id="${p.id}" data-testid="btn-delete-produto-${p.id}" title="Excluir">
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>`;
+                wrap.querySelectorAll('[data-action="delete-produto"]').forEach((b) => {
+                    b.addEventListener("click", () => askDelete({
+                        title: "Excluir produto",
+                        message: "Deseja realmente excluir este produto? Esta ação não pode ser desfeita.",
+                        onOk: async () => {
+                            await Api.produtos.remove(Number(b.dataset.id));
+                            UI.toast({ title: "Produto excluído", type: "success" });
+                            await refreshProdutos();
+                        },
+                    }));
+                });
+            }
+
+            function openProdutoModal() {
+                document.getElementById("formProduto").reset();
+                Validator.reset(document.getElementById("formProduto"));
+                UI.openModal("modalProduto");
+                setTimeout(() => document.querySelector('#formProduto [name="nome"]').focus(), 50);
+            }
+
+            async function submitProduto() {
+                const form = document.getElementById("formProduto");
+                Validator.reset(form);
+                const data = formToObject(form);
+                if (!data.nome?.trim()) {
+                    Validator.showError(form, "nome");
+                    return UI.toast({ title: "Campos inválidos", message: "Verifique os campos obrigatórios.", type: "error" });
+                }
+                try {
+                    const novo = await Api.produtos.create({
+                        nome: data.nome.trim(),
+                        codigo: data.codigo || "",
+                        fornecedor: data.fornecedor || "",
+                        preco: data.preco ? Number(data.preco) : 0,
+                    });
+                    UI.closeModal("modalProduto");
+                    UI.toast({ title: "Produto cadastrado", message: novo.nome, type: "success" });
+                    await refreshProdutos();
+                    comboProduto.setSelected(novo);
+                } catch (e) {
+                    UI.toast({ title: "Erro ao salvar", message: e.message, type: "error" });
+                }
+            }
+
+            // ----- Visitas -----
+            async function refreshVisitas() {
+                const filtro = document.getElementById("visitFilter").value;
+                visitas = await Api.visitas.list(filtro);
+                renderVisitas();
+                document.getElementById("visitCount").textContent =
+                    `${visitas.length} ${visitas.length === 1 ? "visita" : "visitas"}`;
+            }
+
+            function renderVisitas() {
+                const wrap = document.getElementById("visitListWrap");
+                if (visitas.length === 0) {
+                    wrap.innerHTML = emptyState("clipboard-list", "Nenhuma visita cadastrada", "Use o formulário ao lado para registrar a primeira visita.");
+                    return;
+                }
+                wrap.innerHTML = `
+            <div class="table-wrap" style="border:none; border-radius:0;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Médico</th>
+                    <th>Produto</th>
+                    <th>Qtd.</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${visitas.map((v) => `
+                    <tr data-testid="visita-row-${v.id}">
+                      <td>
+                        <div class="cell-primary" style="font-family:var(--mono)">${UI.fmtDate(v.dataVisita)}</div>
+                        ${v.horaVisita ? `<div class="cell-muted">${UI.escapeHtml(v.horaVisita)}</div>` : ""}
+                      </td>
+                      <td>
+                        <div class="cell-primary">${UI.escapeHtml(v.medicoConvenio?.nome || "—")}</div>
+                        <div class="cell-muted">${UI.escapeHtml(Enums.labelFor(Enums.especialidades, v.especialidade || v.medicoConvenio?.especialidade))}</div>
+                      </td>
+                      <td>
+                        <div class="cell-primary">${UI.escapeHtml(v.produtoApresentado?.nome || "—")}</div>
+                        <div class="cell-muted">${UI.escapeHtml(v.hospitalClinica || "")}</div>
+                      </td>
+                      <td><strong style="font-family:var(--mono)">${UI.fmtNumber(v.quantidade)}</strong></td>
+                      <td>${statusBadge(v.status)}</td>
+                      <td>
+                        <div class="row-actions">
+                          <button class="btn-icon" data-action="view-visita" data-id="${v.id}" data-testid="btn-view-visita-${v.id}" title="Detalhes">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                          <button class="btn-icon danger" data-action="delete-visita" data-id="${v.id}" data-testid="btn-delete-visita-${v.id}" title="Excluir">
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>`;
+                wrap.querySelectorAll('[data-action="delete-visita"]').forEach((b) => {
+                    b.addEventListener("click", () => askDelete({
+                        title: "Excluir visita",
+                        message: "Deseja realmente excluir esta visita? Esta ação não pode ser desfeita.",
+                        onOk: async () => {
+                            await Api.visitas.remove(Number(b.dataset.id));
+                            UI.toast({ title: "Visita excluída", type: "success" });
+                            await refreshVisitas();
+                            await refreshDashboard();
+                        },
+                    }));
+                });
+                wrap.querySelectorAll('[data-action="view-visita"]').forEach((b) => {
+                    b.addEventListener("click", () => {
+                        const v = visitas.find((x) => x.id === Number(b.dataset.id));
+                        if (v) showVisitDetail(v);
+                    });
+                });
+            }
+
+            function statusBadge(s) {
+                if (s === "ATIVO") return `<span class="badge badge-success">Ativo</span>`;
+                if (s === "POTENCIAL") return `<span class="badge badge-warn">Potencial</span>`;
+                return `<span class="badge badge-muted">—</span>`;
+            }
+
+            async function submitVisita(e) {
+                e.preventDefault();
+                const form = document.getElementById("formVisita");
+                Validator.reset(form);
+                const data = formToObject(form);
+                let valid = true;
+                if (!comboMedico.getSelected()) {
+                    document.querySelector('#comboMedico').closest(".field").classList.add("error");
+                    document.querySelector('[data-error="medico"]').hidden = false;
+                    valid = false;
+                }
+                if (!comboProduto.getSelected()) {
+                    document.querySelector('#comboProduto').closest(".field").classList.add("error");
+                    document.querySelector('[data-error="produto"]').hidden = false;
+                    valid = false;
+                }
+                if (!data.dataVisita) { Validator.showError(form, "dataVisita"); valid = false; }
+                if (data.quantidade === "" || data.quantidade == null) { Validator.showError(form, "quantidade"); valid = false; }
+                if (!valid) {
+                    return UI.toast({ title: "Campos inválidos", message: "Preencha os campos obrigatórios.", type: "error" });
+                }
+                try {
+                    await Api.visitas.create({
+                        quantidade: Number(data.quantidade),
+                        dataVisita: data.dataVisita,
+                        horaVisita: data.horaVisita || null,
+                        especialidade: data.especialidade || null,
+                        status: data.status || null,
+                        responsavel: data.responsavel || "",
+                        hospitalClinica: data.hospitalClinica || "",
+                        objetivoVisita: data.objetivoVisita || "",
+                        feedback: data.feedback || "",
+                        proximosPassos: data.proximosPassos || "",
+                        observacoes: data.observacoes || "",
+                        idMedicoConvenio: comboMedico.getSelected().id,
+                        idProdutoApresentado: comboProduto.getSelected().id,
+                    });
+                    UI.toast({ title: "Visita cadastrada", message: "Registro adicionado com sucesso.", type: "success" });
+                    form.reset();
+                    comboMedico.clear();
+                    comboProduto.clear();
+                    await refreshVisitas();
+                    await refreshDashboard();
+                } catch (e) {
+                    UI.toast({ title: "Erro ao salvar", message: e.message, type: "error" });
+                }
+            }
+
+            function showVisitDetail(v) {
+                const html = `
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div><div class="card-kicker">Data</div><div>${UI.fmtDate(v.dataVisita)} ${v.horaVisita ? "· " + UI.escapeHtml(v.horaVisita) : ""}</div></div>
+              <div><div class="card-kicker">Status</div><div>${statusBadge(v.status)}</div></div>
+              <div><div class="card-kicker">Médico</div><div>${UI.escapeHtml(v.medicoConvenio?.nome || "—")}</div></div>
+              <div><div class="card-kicker">Produto</div><div>${UI.escapeHtml(v.produtoApresentado?.nome || "—")}</div></div>
+              <div><div class="card-kicker">Quantidade</div><div style="font-family:var(--mono)">${UI.fmtNumber(v.quantidade)}</div></div>
+              <div><div class="card-kicker">Especialidade</div><div>${UI.escapeHtml(Enums.labelFor(Enums.especialidades, v.especialidade))}</div></div>
+              <div><div class="card-kicker">Responsável</div><div>${UI.escapeHtml(v.responsavel || "—")}</div></div>
+              <div><div class="card-kicker">Hospital/Clínica</div><div>${UI.escapeHtml(v.hospitalClinica || "—")}</div></div>
+              <div style="grid-column: span 2"><div class="card-kicker">Objetivo</div><div>${UI.escapeHtml(v.objetivoVisita || "—")}</div></div>
+              <div style="grid-column: span 2"><div class="card-kicker">Feedback</div><div>${UI.escapeHtml(v.feedback || "—")}</div></div>
+              <div style="grid-column: span 2"><div class="card-kicker">Próximos passos</div><div>${UI.escapeHtml(v.proximosPassos || "—")}</div></div>
+              ${v.observacoes ? `<div style="grid-column: span 2"><div class="card-kicker">Observações</div><div>${UI.escapeHtml(v.observacoes)}</div></div>` : ""}
+            </div>`;
+                document.getElementById("modalConfirmTitle").textContent = `Visita #${v.id}`;
+                document.getElementById("modalConfirmSub").textContent = "Detalhes do registro.";
+                document.getElementById("modalConfirmBody").innerHTML = html;
+                const ok = document.getElementById("btnConfirmOk");
+                ok.innerHTML = `<i class="fa-solid fa-check"></i> Fechar`;
+                ok.classList.remove("btn-danger");
+                ok.classList.add("btn-primary");
+                ok.onclick = () => UI.closeModal("modalConfirm");
+                UI.openModal("modalConfirm");
+            }
+
+            // ----- Confirm -----
+            function askDelete({ title, message, onOk }) {
+                document.getElementById("modalConfirmTitle").textContent = title;
+                document.getElementById("modalConfirmSub").textContent = "Esta ação não pode ser desfeita.";
+                document.getElementById("modalConfirmBody").textContent = message;
+                const ok = document.getElementById("btnConfirmOk");
+                ok.innerHTML = `<i class="fa-solid fa-trash"></i> Confirmar`;
+                ok.classList.remove("btn-primary");
+                ok.classList.add("btn-danger");
+                ok.onclick = async () => {
+                    try {
+                        await onOk();
+                        UI.closeModal("modalConfirm");
+                    } catch (e) {
+                        UI.toast({ title: "Erro", message: e.message, type: "error" });
+                    }
+                };
+                UI.openModal("modalConfirm");
+            }
+
+            // ----- Dashboard -----
+            async function refreshDashboard() {
+                const d = await Api.dashboard.get();
+                document.getElementById("kpiMes").textContent = UI.fmtNumber(d.totalVisitasRealizadasNoMes);
+                document.getElementById("kpiAtivas").textContent = UI.fmtNumber(d.totalVisitasRealizadaAtivas);
+                document.getElementById("kpiPotencial").textContent = UI.fmtNumber(d.totalVisitasRealizadaPotencial);
+                document.getElementById("kpiVendido").textContent = UI.fmtBRL(d.totalVendidoMes);
+                renderEspecialidadeChart();
+                renderRecentVisits();
+            }
+            function renderEspecialidadeChart() {
+                const wrap = document.getElementById("chartEspecialidade");
+                const counts = {};
+                for (const v of visitas) {
+                    const k = v.especialidade || v.medicoConvenio?.especialidade || "NONE";
+                    counts[k] = (counts[k] || 0) + 1;
+                }
+                const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+                if (entries.length === 0) {
+                    wrap.innerHTML = `<div class="empty"><i class="fa-solid fa-chart-column"></i><div class="empty-title">Sem dados</div>Cadastre visitas para ver o gráfico.</div>`;
+                    return;
+                }
+                const max = Math.max(...entries.map((e) => e[1]));
+                wrap.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              ${entries.map(([k, n]) => {
+                    const pct = Math.round((n / max) * 100);
+                    return `
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                      <span style="font-weight:600">${UI.escapeHtml(Enums.labelFor(Enums.especialidades, k))}</span>
+                      <span style="color:var(--muted); font-family:var(--mono);">${n}</span>
+                    </div>
+                    <div style="height:8px; background:var(--line-2); border-radius:999px; overflow:hidden;">
+                      <div style="height:100%; width:${pct}%; background:linear-gradient(90deg, var(--primary), var(--primary-600)); border-radius:999px; transition:width .4s ease;"></div>
+                    </div>
+                  </div>`;
+                }).join("")}
+            </div>`;
+            }
+            function renderRecentVisits() {
+                const wrap = document.getElementById("recentVisits");
+                const recent = [...visitas].slice(0, 5);
+                if (recent.length === 0) {
+                    wrap.innerHTML = `<div class="empty"><i class="fa-solid fa-inbox"></i><div class="empty-title">Sem registros</div>Cadastre visitas para vê-las aqui.</div>`;
+                    return;
+                }
+                wrap.innerHTML = `
+            <div style="display:flex; flex-direction:column; divide-y;">
+              ${recent.map((v) => `
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line-2);">
+                  <div>
+                    <div style="font-weight:600">${UI.escapeHtml(v.medicoConvenio?.nome || "—")}</div>
+                    <div class="cell-muted">${UI.fmtDate(v.dataVisita)} · ${UI.escapeHtml(v.produtoApresentado?.nome || "—")}</div>
+                  </div>
+                  ${statusBadge(v.status)}
+                </div>
+              `).join("")}
+            </div>`;
+            }
+
+            // ----- Helpers -----
+            function formToObject(form) {
+                const data = {};
+                new FormData(form).forEach((v, k) => (data[k] = v));
+                return data;
+            }
+            function emptyState(icon, title, msg) {
+                return `<div class="empty"><i class="fa-solid fa-${icon}"></i><div class="empty-title">${title}</div>${msg}</div>`;
+            }
+
+            // ----- Exportar Excel -----
+            async function exportarExcel() {
+                try {
+                    const r = await Http.request("GET", "/visita-realizada/excel");
+                    if (!r.ok) throw new Error("Falha ao gerar Excel");
+                    const url = URL.createObjectURL(r.blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `visitas-${new Date().toISOString().slice(0, 10)}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                    UI.toast({ title: "Excel gerado", type: "success" });
+                } catch (e) {
+                    UI.toast({ title: "Erro", message: e.message, type: "error" });
+                }
+            }
+
+            // ----- Init -----
+            async function init() {
+                UI.bindModalClosers();
+                populateEspecialidadeSelects();
+                initCombos();
+                bindNav();
+
+                // form submit
+                document.getElementById("formVisita").addEventListener("submit", submitVisita);
+                document.getElementById("formVisita").addEventListener("reset", () => {
+                    setTimeout(() => {
+                        Validator.reset(document.getElementById("formVisita"));
+                        comboMedico.clear();
+                        comboProduto.clear();
+                    }, 0);
+                });
+
+                document.getElementById("btnSaveMedico").addEventListener("click", submitMedico);
+                document.getElementById("btnSaveProduto").addEventListener("click", submitProduto);
+                document.getElementById("btnNewMedico").addEventListener("click", openMedicoModal);
+                document.getElementById("btnNewProduto").addEventListener("click", openProdutoModal);
+                document.getElementById("btnNewVisitTop").addEventListener("click", () => go("visitas"));
+                document.getElementById("btnExportExcel").addEventListener("click", exportarExcel);
+                document.getElementById("btnExportExcel2").addEventListener("click", exportarExcel);
+                document.getElementById("btnReloadDashboard").addEventListener("click", refreshDashboard);
+
+                // Filters
+                let medT, prodT, visT;
+                document.getElementById("medicoFilter").addEventListener("input", () => {
+                    clearTimeout(medT); medT = setTimeout(refreshMedicos, 180);
+                });
+                document.getElementById("produtoFilter").addEventListener("input", () => {
+                    clearTimeout(prodT); prodT = setTimeout(refreshProdutos, 180);
+                });
+                document.getElementById("visitFilter").addEventListener("input", () => {
+                    clearTimeout(visT); visT = setTimeout(refreshVisitas, 180);
+                });
+
+                await Promise.all([refreshMedicos(), refreshProdutos(), refreshVisitas()]);
+                await refreshDashboard();
+            }
+
+            return { init };
+        })();
+
+        // Bootstrap once DOM is parsed.
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", App.init);
+        } else {
+            App.init();
+        }
+    </script>
+    <script defer
+        src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447"
+        integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ=="
+        data-cf-beacon='{"version":"2024.11.0","token":"7f7b0fd8732c4326aae4b9d58d5c514a","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
